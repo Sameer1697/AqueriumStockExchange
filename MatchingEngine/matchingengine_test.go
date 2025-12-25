@@ -1,7 +1,6 @@
 package matchingengine
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -135,7 +134,6 @@ func TestEngineSweep(t *testing.T) {
 	me.SubmitOrder(buy)
 
 	wait()
-	fmt.Printf("Final buy: filled=%f remaining=%f\n", buy.Filled, buy.Remaining())
 
 	if buy.Remaining() != 0 {
 		t.Fatal("buy should be fully filled")
