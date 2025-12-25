@@ -1,7 +1,6 @@
 package orderbook
 
 import (
-	"fmt"
 	"goStockExchange/order"
 )
 
@@ -41,7 +40,6 @@ func (ob *OrderBook) matchBuy(o *order.Order) {
 		if o.IsLimit() && pl.Price > o.Price {
 			return false // price crossed
 		}
-		fmt.Println("Matching at price", pl.Price, "remaining", o.Remaining())
 
 		pl.Match(o)
 		if pl.IsEmpty() {

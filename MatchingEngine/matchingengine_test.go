@@ -189,3 +189,82 @@ func TestEngineBurst(t *testing.T) {
 		t.Fatal("burst orders not fully matched")
 	}
 }
+
+func TestMarketBuySweep(t *testing.T) {
+	me := NewMatchingEngine("TEST", 20)
+	startEngine(me)
+	defer stopEngine(me)
+
+	me.SubmitOrder(order.NewOrder(1, 1, order.Sell, 100, 5, order.Limit))
+	me.SubmitOrder(order.NewOrder(2, 1, order.Sell, 101, 5, order.Limit))
+	me.SubmitOrder(order.NewOrder(3, 1, order.Sell, 102, 5, order.Limit))
+
+	buy := order.NewOrder(4, 2, order.Buy, 100, 0, order.Market)
+	me.SubmitOrder(buy)
+
+	wait()
+
+	if buy.Remaining() != 0 {
+		t.Fatalf("market buy should fully fill, remaining=%f", buy.Remaining())
+	}
+}
+
+func TestMarketBuyPartialFill(t *testing.T) {
+	me := NewMatchingEngine("TEST", 20)
+	startEngine(me)
+	defer stopEngine(me)
+
+	me.SubmitOrder(order.NewOrder(1, 1, order.Sell, 100, 5, order.Limit))
+	me.SubmitOrder(order.NewOrder(2, 1, order.Sell, 101, 5, order.Limit))
+
+	buy := order.NewOrder(3, 2, order.Buy, 100, 0, order.Market)
+	me.SubmitOrder(buy)
+
+	wait()
+
+	if buy.Filled != 10 {
+		t.Fatalf("expected filled=10, got=%f", buy.Filled)
+	}
+
+	if buy.Remaining() != 0 {
+		t.Fatal("market order remainder must be discarded")
+	}
+
+	if buy.Status != order.Cancelled {
+		t.Fatal("market remainder must be cancelled")
+	}
+}
+
+func TestMarketSellSweep(t *testing.T) {
+	me := NewMatchingEngine("TEST", 20)
+	startEngine(me)
+	defer stopEngine(me)
+
+	me.SubmitOrder(order.NewOrder(1, 1, order.Buy, 105, 5, order.Limit))
+	me.SubmitOrder(order.NewOrder(2, 1, order.Buy, 104, 5, order.Limit))
+	me.SubmitOrder(order.NewOrder(3, 1, order.Buy, 103, 5, order.Limit))
+
+	sell := order.NewOrder(4, 2, order.Sell, 100, 0, order.Market)
+	me.SubmitOrder(sell)
+
+	wait()
+
+	if sell.Remaining() != 0 {
+		t.Fatal("market sell should fully fill")
+	}
+}
+
+func TestMarketOrderDoesNotRest(t *testing.T) {
+	me := NewMatchingEngine("TEST", 20)
+	startEngine(me)
+	defer stopEngine(me)
+
+	buy := order.NewOrder(1, 1, order.Buy, 100, 0, order.Market)
+	me.SubmitOrder(buy)
+
+	wait()
+
+	if !me.book.IsEmpty() {
+		t.Fatal("market order must not rest in book")
+	}
+}
